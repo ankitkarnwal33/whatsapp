@@ -1,0 +1,45 @@
+// Prisma schema for WhatsApp Business Dashboard
+// Database: SQLite (lightweight, perfect for single-admin tool)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication (single admin)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // hashed password
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Contact model - stores WhatsApp users who have messaged
+model Contact {
+  id        String   @id @default(cuid())
+  waNumber  String   @unique // WhatsApp number (e.g., "1234567890")
+  name      String?  // Name from WhatsApp profile (nullable)
+  unreadCount Int    @default(0) // Count of unread messages
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  Message[] // One-to-many relationship with messages
+}
+
+// Message model - stores all messages (inbound and outbound)
+model Message {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  direction String   // "inbound" or "outbound"
+  content   String   // Message text content
+  timestamp DateTime // When the message was sent/received (from WhatsApp)
+  status    String?  // "sent", "delivered", "read" (if available from API)
+  isRead    Boolean  @default(false) // For inbound messages, track if admin has read
+  createdAt DateTime @default(now())
+}
+
